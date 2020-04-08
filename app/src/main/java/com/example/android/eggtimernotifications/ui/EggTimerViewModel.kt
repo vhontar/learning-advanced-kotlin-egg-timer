@@ -16,18 +16,25 @@
  
 package com.example.android.eggtimernotifications.ui
 
-import android.app.*
+import android.app.AlarmManager
+import android.app.Application
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.CountDownTimer
 import android.os.SystemClock
 import androidx.core.app.AlarmManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.*
-import com.example.android.eggtimernotifications.receiver.AlarmReceiver
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.android.eggtimernotifications.R
-import com.example.android.eggtimernotifications.util.sendNotification
-import kotlinx.coroutines.*
+import com.example.android.eggtimernotifications.receiver.AlarmReceiver
+import com.example.android.eggtimernotifications.util.cancelNotifications
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class EggTimerViewModel(private val app: Application) : AndroidViewModel(app) {
 
@@ -118,18 +125,15 @@ class EggTimerViewModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 val triggerTime = SystemClock.elapsedRealtime() + selectedInterval
 
-                // TODO: Step 1.5 get an instance of NotificationManager and call sendNotification
-                val notificationManager =
-                    ContextCompat.getSystemService(app, NotificationManager::class.java) as NotificationManager
-                // TODO: Step 1.15 call cancel notification
-                notificationManager.sendNotification(app.getString(R.string.notification_text), app)
-
                 AlarmManagerCompat.setExactAndAllowWhileIdle(
                     alarmManager,
                     AlarmManager.ELAPSED_REALTIME_WAKEUP,
                     triggerTime,
                     notifyPendingIntent
                 )
+
+                val notificationManager = app.getSystemService(NotificationManager::class.java) as NotificationManager
+                notificationManager.cancelNotifications()
 
                 viewModelScope.launch {
                     saveTime(triggerTime)
